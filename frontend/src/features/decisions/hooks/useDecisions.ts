@@ -1,6 +1,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { dashboardKeys } from "@/features/dashboard/hooks/useDashboard";
 import type { DecisionCreate, PaginatedParams } from "@/types/api";
 import { decisionService } from "../services/decisionService";
 
@@ -43,6 +44,10 @@ export function useCreateDecision() {
 
       queryClient.invalidateQueries({
         queryKey: ["applications"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
       });
     },
   });

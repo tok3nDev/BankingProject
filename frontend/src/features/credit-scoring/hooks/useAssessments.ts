@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+import { dashboardKeys } from "@/features/dashboard/hooks/useDashboard";
 import type { PaginatedParams } from "@/types/api";
 import {
   assessmentService,
@@ -53,6 +54,10 @@ export function useCreateAssessment() {
       queryClient.invalidateQueries({
         queryKey: ["applications"],
       });
+
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+      });
     },
   });
 }
@@ -64,18 +69,22 @@ export function useRunAssessment() {
     mutationFn: (applicationId: string) =>
       assessmentService.run(applicationId),
 
-  onSuccess: (_data, applicationId) => {
-    queryClient.invalidateQueries({
-      queryKey: [
-        ...assessmentKeys.all,
-        "application",
-        applicationId,
-      ],
-    });
+    onSuccess: (_data, applicationId) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          ...assessmentKeys.all,
+          "application",
+          applicationId,
+        ],
+      });
 
-    queryClient.invalidateQueries({
-      queryKey: ["applications"],
-    });
-  },
+      queryClient.invalidateQueries({
+        queryKey: ["applications"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+      });
+    },
   });
 }

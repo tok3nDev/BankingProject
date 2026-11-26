@@ -1,6 +1,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { dashboardKeys } from "@/features/dashboard/hooks/useDashboard";
 import type {
   ApplicationCreate,
   PaginatedParams,
@@ -57,6 +58,10 @@ export function useCreateApplication() {
 
       queryClient.invalidateQueries({
         queryKey: ["customers", "detail", application.customer_id],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
       });
     },
   });
