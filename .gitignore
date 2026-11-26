@@ -1,0 +1,39 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+**/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node.js
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# IDE
+.idea/
+
+# ML models and datasets
+backend/ml_models/
+backend/data/raw/
+backend/data/processed/
+backend/data/synthetic/
+!backend/data/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
