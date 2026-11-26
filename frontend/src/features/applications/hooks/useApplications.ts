@@ -9,11 +9,21 @@ import { applicationService } from "../services/applicationService";
 
 export const applicationKeys = {
   all: ["applications"] as const,
+  lists: () => [...applicationKeys.all, "list"] as const,
+  list: (params?: PaginatedParams) =>
+    [...applicationKeys.lists(), params] as const,
   details: () => [...applicationKeys.all, "detail"] as const,
   detail: (id: string) => [...applicationKeys.details(), id] as const,
   customer: (customerId: string, params?: PaginatedParams) =>
     [...applicationKeys.all, "customer", customerId, params] as const,
 };
+
+export function useApplications(params?: PaginatedParams) {
+  return useQuery({
+    queryKey: applicationKeys.list(params),
+    queryFn: () => applicationService.getAll(params),
+  });
+}
 
 export function useApplication(id: string) {
   return useQuery({

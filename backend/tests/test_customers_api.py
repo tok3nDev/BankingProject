@@ -12,6 +12,10 @@ def test_create_customer_returns_201(client: TestClient):
             "full_name": "John Smith",
             "date_of_birth": "1990-05-15",
             "email": "john.smith@example.com",
+            "monthly_income": 3500,
+            "monthly_debt_payments": 300,
+            "employment_months": 36,
+            "employment_status": "employed",
         },
     )
 
@@ -25,7 +29,13 @@ def test_create_customer_returns_201(client: TestClient):
 def test_create_customer_without_email_returns_201(client: TestClient):
     response = client.post(
         "/api/v1/customers",
-        json={"full_name": "Jane Smith"},
+        json={
+            "full_name": "Jane Smith",
+            "monthly_income": 2500,
+            "monthly_debt_payments": 200,
+            "employment_months": 24,
+            "employment_status": "employed",
+        },
     )
 
     assert response.status_code == 201
@@ -50,6 +60,10 @@ def test_create_customer_with_duplicate_email_returns_409(
         json={
             "full_name": "Another Customer",
             "email": "existing@example.com",
+            "monthly_income": 4000,
+            "monthly_debt_payments": 500,
+            "employment_months": 48,
+            "employment_status": "employed",
         },
     )
 

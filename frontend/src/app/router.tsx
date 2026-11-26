@@ -5,6 +5,8 @@ import { PlaceholderPage } from "@/components/shared/PlaceholderPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { CustomerDetails } from "@/features/customers/CustomerDetails";
 import { CustomersPage } from "@/features/customers/CustomersPage";
+import { ApplicationsPage } from "@/features/applications/ApplicationsPage";
+import { ApplicationDetails } from "@/features/applications/ApplicationDetails";
 
 export const router = createBrowserRouter([
   {
@@ -25,7 +27,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "applications",
-        element: <PlaceholderPage title="Applications" />,
+        element: <ApplicationsPage />,
+      },
+      {
+        path: "applications/:id",
+        element: <ApplicationDetails />,
       },
       {
         path: "credit-scoring",

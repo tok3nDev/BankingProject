@@ -1,9 +1,20 @@
 
+export type EmploymentStatus =
+  | "employed"
+  | "self_employed"
+  | "unemployed"
+  | "student"
+  | "retired";
+
 export interface Customer {
   id: string;
   full_name: string;
   date_of_birth: string | null;
   email: string | null;
+  monthly_income: string | null;
+  monthly_debt_payments: string | null;
+  employment_months: number | null;
+  employment_status: EmploymentStatus | null;
   created_at: string;
 }
 
@@ -11,12 +22,20 @@ export interface CustomerCreate {
   full_name: string;
   date_of_birth?: string | null;
   email?: string | null;
+  monthly_income: number;
+  monthly_debt_payments: number;
+  employment_months: number;
+  employment_status: EmploymentStatus;
 }
 
 export interface CustomerUpdate {
   full_name?: string | null;
   date_of_birth?: string | null;
   email?: string | null;
+  monthly_income?: number | null;
+  monthly_debt_payments?: number | null;
+  employment_months?: number | null;
+  employment_status?: EmploymentStatus | null;
 }
 
 export type ApplicationStatus =

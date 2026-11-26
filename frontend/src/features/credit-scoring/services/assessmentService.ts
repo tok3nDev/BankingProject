@@ -41,4 +41,18 @@ export const assessmentService = {
 
     return response.data;
   },
+
+  async run(applicationId: string): Promise<CreditAssessment> {
+    const response = await api.post<CreditAssessment>(
+      "/assessments/run",
+      null,
+      {
+        params: {
+          application_id: applicationId,
+        },
+      },
+    );
+
+    return response.data;
+  },
 };

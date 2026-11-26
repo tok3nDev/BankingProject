@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -12,6 +13,10 @@ def test_create_customer(db_session: Session):
     data = CustomerCreate(
         full_name="John Smith",
         email="john@example.com",
+        monthly_income=Decimal("5000.00"),
+        monthly_debt_payments=Decimal("1000.00"),
+        employment_months=36,
+        employment_status="employed",
     )
 
     customer = service.create_customer(data)
@@ -19,11 +24,21 @@ def test_create_customer(db_session: Session):
     assert customer.id is not None
     assert customer.full_name == "John Smith"
     assert customer.email == "john@example.com"
+    assert customer.monthly_income == Decimal("5000.00")
+    assert customer.monthly_debt_payments == Decimal("1000.00")
+    assert customer.employment_months == 36
+    assert customer.employment_status == "employed"
 
 
 def test_create_customer_without_email(db_session: Session):
     service = CustomerService(db_session)
-    data = CustomerCreate(full_name="Jane Smith")
+    data = CustomerCreate(
+        full_name="Jane Smith",
+        monthly_income=Decimal("4000.00"),
+        monthly_debt_payments=Decimal("500.00"),
+        employment_months=24,
+        employment_status="employed",
+    )
 
     customer = service.create_customer(data)
 
@@ -45,6 +60,10 @@ def test_create_customer_with_duplicate_email_raises_error(
     data = CustomerCreate(
         full_name="Another Customer",
         email="existing@example.com",
+        monthly_income=Decimal("5000.00"),
+        monthly_debt_payments=Decimal("1000.00"),
+        employment_months=36,
+        employment_status="employed",
     )
 
     with pytest.raises(

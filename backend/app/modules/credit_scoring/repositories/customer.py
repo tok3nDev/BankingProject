@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
@@ -16,11 +17,19 @@ class CustomerRepository:
         full_name: str,
         date_of_birth=None,
         email: str | None = None,
+        monthly_income: Decimal | None = None,
+        monthly_debt_payments: Decimal | None = None,
+        employment_months: int | None = None,
+        employment_status: str | None = None,
     ) -> Customer:
         customer = Customer(
             full_name=full_name,
             date_of_birth=date_of_birth,
             email=email,
+            monthly_income=monthly_income,
+            monthly_debt_payments=monthly_debt_payments,
+            employment_months=employment_months,
+            employment_status=employment_status,
         )
 
         self.session.add(customer)
@@ -50,3 +59,14 @@ class CustomerRepository:
         )
 
         return list(self.session.scalars(statement).all())
+
+    def update(
+        self,
+        customer: Customer,
+        **data: object,
+    ) -> Customer:
+        for field, value in data.items():
+            setattr(customer, field, value)
+
+        self.session.flush()
+        return customer

@@ -1,5 +1,9 @@
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import type { PaginatedParams } from "@/types/api";
 import {
@@ -42,13 +46,36 @@ export function useCreateAssessment() {
     mutationFn: (data: AssessmentCreate) =>
       assessmentService.create(data),
     onSuccess: () => {
-    queryClient.invalidateQueries({
+      queryClient.invalidateQueries({
         queryKey: assessmentKeys.all,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["applications"],
+      });
+    },
+  });
+}
+
+export function useRunAssessment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (applicationId: string) =>
+      assessmentService.run(applicationId),
+
+  onSuccess: (_data, applicationId) => {
+    queryClient.invalidateQueries({
+      queryKey: [
+        ...assessmentKeys.all,
+        "application",
+        applicationId,
+      ],
     });
 
     queryClient.invalidateQueries({
-        queryKey: ["applications"],
+      queryKey: ["applications"],
     });
-    },
+  },
   });
 }

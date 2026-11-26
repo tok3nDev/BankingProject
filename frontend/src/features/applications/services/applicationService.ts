@@ -7,6 +7,13 @@ import type {
 } from "@/types/api";
 
 export const applicationService = {
+  async getAll(params?: PaginatedParams): Promise<CreditApplication[]> {
+    const response = await api.get<CreditApplication[]>("/applications", {
+      params,
+    });
+    return response.data;
+  },
+
   async getById(id: string): Promise<CreditApplication> {
     const response = await api.get<CreditApplication>(`/applications/${id}`);
     return response.data;

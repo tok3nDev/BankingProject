@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.modules.credit_scoring.schemas.customer import (
     CustomerCreate,
     CustomerResponse,
+    CustomerUpdate,
 )
 from app.modules.credit_scoring.services.customer import CustomerService
 
@@ -76,3 +77,41 @@ def get_customer(
         )
 
     return CustomerResponse.model_validate(customer)
+
+
+@router.patch(
+    "/{customer_id}",
+    response_model=CustomerResponse,
+)
+def update_customer(
+    customer_id: UUID,
+    data: CustomerUpdate,
+    db: Session = Depends(get_db),
+) -> CustomerResponse:
+    service = CustomerService(db)
+
+    try:
+        customer = service.update_customer(customer_id, data)
+
+        if customer is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Customer not found",
+            )
+
+        db.commit()
+        return CustomerResponse.model_validate(customer)
+
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Customer update conflicts with existing data",
+        ) from exc

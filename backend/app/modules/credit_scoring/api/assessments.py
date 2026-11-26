@@ -62,6 +62,44 @@ def create_assessment(
         ) from exc
 
 
+@router.post(
+    "/run",
+    response_model=AssessmentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def run_assessment(
+    application_id: UUID,
+    db: Session = Depends(get_db),
+) -> AssessmentResponse:
+    service = AssessmentService(db)
+
+    try:
+        assessment = service.run_assessment(application_id)
+        db.commit()
+        return AssessmentResponse.model_validate(assessment)
+
+    except AssessmentConflictError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Database integrity conflict",
+        ) from exc
+
+
 @router.get(
     "/application/{application_id}",
     response_model=list[AssessmentResponse],
