@@ -1,10 +1,12 @@
 
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   FileText,
   Play,
   LoaderCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 import { useApplication } from "./hooks/useApplications";
@@ -13,8 +15,14 @@ import {
   useApplicationAssessments,
   useRunAssessment,
 } from "@/features/credit-scoring/hooks/useAssessments";
-import { useApplicationDecisions } from "@/features/decisions/hooks/useDecisions";
-import type { ApplicationStatus } from "@/types/api";
+import {
+  useApplicationDecisions,
+  useCreateDecision,
+} from "@/features/decisions/hooks/useDecisions";
+import type {
+  ApplicationStatus,
+  DecisionStatus,
+} from "@/types/api";
 
 const statusStyles: Record<ApplicationStatus, string> = {
   pending: "bg-amber-500/10 text-amber-600",
@@ -22,6 +30,12 @@ const statusStyles: Record<ApplicationStatus, string> = {
   approved: "bg-green-500/10 text-green-600",
   rejected: "bg-red-500/10 text-red-600",
   withdrawn: "bg-muted text-muted-foreground",
+};
+
+const decisionStyles: Record<DecisionStatus, string> = {
+  approved: "bg-green-500/10 text-green-600",
+  rejected: "bg-red-500/10 text-red-600",
+  manual_review: "bg-amber-500/10 text-amber-600",
 };
 
 function getFeatureNumber(
@@ -42,6 +56,10 @@ export function ApplicationDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const [decisionStatus, setDecisionStatus] =
+    useState<DecisionStatus>("manual_review");
+  const [decisionReason, setDecisionReason] = useState("");
+
   const applicationQuery = useApplication(id ?? "");
   const application = applicationQuery.data;
 
@@ -58,13 +76,27 @@ export function ApplicationDetails() {
   });
 
   const runAssessment = useRunAssessment();
+  const createDecision = useCreateDecision();
 
   const assessments = assessmentsQuery.data ?? [];
+  const decisions = decisionsQuery.data ?? [];
   const latestAssessment = assessments[0];
+
+  const hasFinalDecision = decisions.some(
+    (decision) =>
+      decision.decision_status === "approved" ||
+      decision.decision_status === "rejected",
+  );
 
   const canRunAssessment =
     application?.status === "pending" ||
     application?.status === "assessed";
+
+  const canCreateDecision =
+    application?.status !== "approved" &&
+    application?.status !== "rejected" &&
+    application?.status !== "withdrawn" &&
+    !hasFinalDecision;
 
   const handleRunAssessment = () => {
     if (!id || !canRunAssessment || runAssessment.isPending) {
@@ -72,6 +104,31 @@ export function ApplicationDetails() {
     }
 
     runAssessment.mutate(id);
+  };
+
+  const handleCreateDecision = (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    if (!id || !canCreateDecision || createDecision.isPending) {
+      return;
+    }
+
+    createDecision.mutate(
+      {
+        application_id: id,
+        assessment_id: latestAssessment?.id ?? null,
+        decision_status: decisionStatus,
+        reason: decisionReason.trim() || null,
+      },
+      {
+        onSuccess: () => {
+          setDecisionReason("");
+          setDecisionStatus("manual_review");
+        },
+      },
+    );
   };
 
   if (applicationQuery.isLoading) {
@@ -338,9 +395,7 @@ export function ApplicationDetails() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground">
-                    Model
-                  </p>
+                  <p className="text-xs text-muted-foreground">Model</p>
                   <p className="mt-1 text-sm font-medium text-foreground">
                     {latestAssessment.model_name} v
                     {latestAssessment.model_version}
@@ -432,10 +487,104 @@ export function ApplicationDetails() {
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground">
-            Decisions
+            Create Credit Decision
           </h2>
           <p className="text-sm text-muted-foreground">
-            Decision history for this application.
+            Record a decision for this credit application.
+          </p>
+        </div>
+
+        {!canCreateDecision ? (
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <CheckCircle2 className="size-4 text-green-600" />
+              Final decision recorded
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This application already has a final decision. No further
+              decisions can be created.
+            </p>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleCreateDecision}
+            className="space-y-4 rounded-xl border border-border bg-card p-6"
+          >
+            <div>
+              <label
+                htmlFor="decision-status"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                Decision
+              </label>
+              <select
+                id="decision-status"
+                value={decisionStatus}
+                onChange={(event) =>
+                  setDecisionStatus(event.target.value as DecisionStatus)
+                }
+                disabled={createDecision.isPending}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              >
+                <option value="manual_review">Manual Review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="decision-reason"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                Reason
+              </label>
+              <textarea
+                id="decision-reason"
+                value={decisionReason}
+                onChange={(event) => setDecisionReason(event.target.value)}
+                disabled={createDecision.isPending}
+                rows={3}
+                placeholder="Enter the reason for this decision..."
+                className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+              />
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              {latestAssessment
+                ? `The latest assessment (${latestAssessment.credit_score}/850) will be attached to this decision.`
+                : "No assessment is available. The decision will be created without an attached assessment."}
+            </div>
+
+            {createDecision.isError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                Failed to create decision: {createDecision.error.message}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={createDecision.isPending || !canCreateDecision}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {createDecision.isPending && (
+                <LoaderCircle className="size-4 animate-spin" />
+              )}
+              {createDecision.isPending
+                ? "Saving Decision..."
+                : "Save Decision"}
+            </button>
+          </form>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">
+            Decision History
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Previous decisions for this application.
           </p>
         </div>
 
@@ -447,24 +596,34 @@ export function ApplicationDetails() {
           <p className="text-sm text-destructive">
             Failed to load decisions.
           </p>
-        ) : decisionsQuery.data?.length ? (
+        ) : decisions.length ? (
           <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-6 py-4">Decision</th>
                   <th className="px-6 py-4">Reason</th>
+                  <th className="px-6 py-4">Assessment</th>
                   <th className="px-6 py-4">Decided At</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {decisionsQuery.data.map((decision) => (
+                {decisions.map((decision) => (
                   <tr key={decision.id}>
-                    <td className="px-6 py-4 font-medium capitalize text-foreground">
-                      {decision.decision_status.replace("_", " ")}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${decisionStyles[decision.decision_status]}`}
+                      >
+                        {decision.decision_status.replace("_", " ")}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {decision.reason ?? "—"}
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">
+                      {decision.assessment_id
+                        ? decision.assessment_id.slice(0, 8)
+                        : "—"}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {new Date(decision.decided_at).toLocaleString("en-US")}
