@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     test_database_url: str | None = None
 
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "ornith:1.5-9b"
 
