@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -11,7 +12,13 @@ from app.modules.credit_scoring.repositories.assessment import (
 )
 
 
+class AssessmentConflictError(Exception):
+    pass
+
+
 class AssessmentService:
+    FINAL_STATUSES = {"approved", "rejected", "withdrawn"}
+
     def __init__(self, session: Session) -> None:
         self.repository = AssessmentRepository(session)
         self.application_repository = ApplicationRepository(session)
@@ -20,16 +27,21 @@ class AssessmentService:
         self,
         *,
         application_id: UUID,
-        probability_of_default,
+        probability_of_default: Decimal,
         credit_score: int,
         model_name: str,
         model_version: str,
-        features: dict,
+        features: dict[str, object],
     ) -> CreditAssessment:
         application = self.application_repository.get_by_id(application_id)
 
         if application is None:
             raise ValueError("Credit application not found")
+
+        if application.status in self.FINAL_STATUSES:
+            raise AssessmentConflictError(
+                "Cannot create assessment for a finalized application"
+            )
 
         assessment = self.repository.create(
             application_id=application_id,

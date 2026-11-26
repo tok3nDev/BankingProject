@@ -12,6 +12,10 @@ from app.modules.credit_scoring.repositories.assessment import (
 from app.modules.credit_scoring.repositories.decision import DecisionRepository
 
 
+class DecisionConflictError(Exception):
+    pass
+
+
 class DecisionService:
     def __init__(self, session: Session) -> None:
         self.repository = DecisionRepository(session)
@@ -30,6 +34,13 @@ class DecisionService:
 
         if application is None:
             raise ValueError("Credit application not found")
+
+        has_final_decision = self.repository.has_final_decision(application_id)
+
+        if has_final_decision:
+            raise DecisionConflictError(
+                "A final decision already exists for this application"
+            )
 
         if assessment_id is not None:
             assessment = self.assessment_repository.get_by_id(assessment_id)

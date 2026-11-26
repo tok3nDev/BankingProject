@@ -1,9 +1,14 @@
 from collections.abc import Generator
+from decimal import Decimal
+from typing import TypedDict
 
 import pytest
 from app.core.config import settings
 from app.db.session import get_db
 from app.main import app
+from app.modules.credit_scoring.models.application import CreditApplication
+from app.modules.credit_scoring.models.assessment import CreditAssessment
+from app.modules.credit_scoring.models.customer import Customer
 from fastapi.testclient import TestClient
 from sqlalchemy import Connection, Engine, create_engine
 from sqlalchemy.engine import make_url
@@ -93,3 +98,46 @@ def client(db_connection: Connection) -> Generator[TestClient, None, None]:
             app.dependency_overrides.pop(get_db, None)
         else:
             app.dependency_overrides[get_db] = previous_override
+
+
+class DecisionContext(TypedDict):
+    customer: Customer
+    application: CreditApplication
+    assessment: CreditAssessment
+
+
+@pytest.fixture
+def decision_context(db_session: Session) -> DecisionContext:
+    customer = Customer(
+        full_name="Test Customer",
+        email="decision.test@example.com",
+    )
+    db_session.add(customer)
+    db_session.flush()
+
+    application = CreditApplication(
+        customer_id=customer.id,
+        requested_amount=Decimal("10000.00"),
+        currency_code="USD",
+        term_months=12,
+        purpose="Personal loan",
+    )
+    db_session.add(application)
+    db_session.flush()
+
+    assessment = CreditAssessment(
+        application_id=application.id,
+        probability_of_default=Decimal("0.025"),
+        credit_score=750,
+        model_name="test-model",
+        model_version="1.0",
+        features={"income": 5000},
+    )
+    db_session.add(assessment)
+    db_session.flush()
+
+    return {
+        "customer": customer,
+        "application": application,
+        "assessment": assessment,
+    }

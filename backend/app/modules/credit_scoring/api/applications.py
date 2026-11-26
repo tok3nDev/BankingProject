@@ -50,12 +50,14 @@ def create_application(
         application = service.create_application(data)
         db.commit()
         return ApplicationResponse.model_validate(application)
+
     except ValueError as exc:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(
@@ -76,11 +78,17 @@ def get_customer_applications(
 ) -> list[ApplicationResponse]:
     service = ApplicationService(db)
 
-    applications = service.get_customer_applications(
-        customer_id,
-        offset=offset,
-        limit=limit,
-    )
+    try:
+        applications = service.get_customer_applications(
+            customer_id,
+            offset=offset,
+            limit=limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return [
         ApplicationResponse.model_validate(application) for application in applications

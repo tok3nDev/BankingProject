@@ -7,9 +7,11 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,6 +38,12 @@ class CreditDecision(Base):
             ],
             name="fk_credit_decisions_assessment_application",
         ),
+        Index(
+            "uq_credit_decisions_one_final_per_application",
+            "application_id",
+            unique=True,
+            postgresql_where=text("decision_status IN ('approved', 'rejected')"),
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -57,7 +65,12 @@ class CreditDecision(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    application: Mapped["CreditApplication"] = relationship(back_populates="decisions")
+    application: Mapped["CreditApplication"] = relationship(
+        back_populates="decisions",
+        overlaps="decisions",
+    )
+
     assessment: Mapped["CreditAssessment | None"] = relationship(
-        back_populates="decisions"
+        back_populates="decisions",
+        overlaps="application,decisions",
     )

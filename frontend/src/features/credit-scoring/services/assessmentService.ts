@@ -34,12 +34,9 @@ export const assessmentService = {
   },
 
   async create(data: AssessmentCreate): Promise<CreditAssessment> {
-    const { application_id, ...query } = data;
-
     const response = await api.post<CreditAssessment>(
       "/assessments",
-      query,
-      { params: { application_id } },
+      data,
     );
 
     return response.data;

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from app.modules.credit_scoring.models.decision import CreditDecision
@@ -33,6 +33,16 @@ class DecisionRepository:
     def get_by_id(self, decision_id: UUID) -> CreditDecision | None:
         statement = select(CreditDecision).where(CreditDecision.id == decision_id)
         return self.session.scalar(statement)
+
+    def has_final_decision(self, application_id: UUID) -> bool:
+        statement = select(
+            exists().where(
+                CreditDecision.application_id == application_id,
+                CreditDecision.decision_status.in_(["approved", "rejected"]),
+            )
+        )
+
+        return bool(self.session.scalar(statement))
 
     def list_by_application(
         self,

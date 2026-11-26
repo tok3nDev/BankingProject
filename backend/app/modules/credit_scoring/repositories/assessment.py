@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
@@ -14,11 +15,11 @@ class AssessmentRepository:
         self,
         *,
         application_id: UUID,
-        probability_of_default,
+        probability_of_default: Decimal,
         credit_score: int,
         model_name: str,
         model_version: str,
-        features: dict,
+        features: dict[str, object],
     ) -> CreditAssessment:
         assessment = CreditAssessment(
             application_id=application_id,

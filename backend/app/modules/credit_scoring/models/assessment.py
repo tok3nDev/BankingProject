@@ -58,7 +58,10 @@ class CreditAssessment(Base):
     model_name: Mapped[str] = mapped_column(String(100), nullable=False)
     model_version: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    features: Mapped[dict] = mapped_column(JSON, nullable=False)
+    features: Mapped[dict[str, object]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
 
     evaluated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -67,6 +70,8 @@ class CreditAssessment(Base):
     application: Mapped["CreditApplication"] = relationship(
         back_populates="assessments"
     )
+
     decisions: Mapped[list["CreditDecision"]] = relationship(
-        back_populates="assessment"
+        back_populates="assessment",
+        overlaps="decisions",
     )

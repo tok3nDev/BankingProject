@@ -9,7 +9,10 @@ from app.modules.credit_scoring.schemas.decision import (
     DecisionCreate,
     DecisionResponse,
 )
-from app.modules.credit_scoring.services.decision import DecisionService
+from app.modules.credit_scoring.services.decision import (
+    DecisionConflictError,
+    DecisionService,
+)
 
 router = APIRouter(prefix="/decisions", tags=["Decisions"])
 
@@ -34,12 +37,21 @@ def create_decision(
         )
         db.commit()
         return DecisionResponse.model_validate(decision)
+
+    except DecisionConflictError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
     except ValueError as exc:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(
@@ -60,11 +72,17 @@ def get_application_decisions(
 ) -> list[DecisionResponse]:
     service = DecisionService(db)
 
-    decisions = service.get_application_decisions(
-        application_id,
-        offset=offset,
-        limit=limit,
-    )
+    try:
+        decisions = service.get_application_decisions(
+            application_id,
+            offset=offset,
+            limit=limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return [DecisionResponse.model_validate(decision) for decision in decisions]
 
