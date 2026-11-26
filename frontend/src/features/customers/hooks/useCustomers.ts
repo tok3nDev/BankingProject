@@ -1,7 +1,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { CustomerCreate, PaginatedParams } from "@/types/api";
+import { dashboardKeys } from "@/features/dashboard/hooks/useDashboard";
+import type {
+  CustomerCreate,
+  CustomerUpdate,
+  PaginatedParams,
+} from "@/types/api";
 import { customerService } from "../services/customerService";
 
 export const customerKeys = {
@@ -36,6 +41,38 @@ export function useCreateCustomer() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: customerKeys.all,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+      });
+    },
+  });
+}
+
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: CustomerUpdate;
+    }) => customerService.update(id, data),
+    onSuccess: (customer) => {
+      queryClient.setQueryData(
+        customerKeys.detail(customer.id),
+        customer,
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: customerKeys.all,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
       });
     },
   });

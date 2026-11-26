@@ -1,9 +1,20 @@
 
 import { useState } from "react";
-import { useCreateCustomer } from "../hooks/useCustomers";
-import type { CustomerCreate, EmploymentStatus } from "@/types/api";
+
+import {
+  useCreateCustomer,
+  useUpdateCustomer,
+} from "../hooks/useCustomers";
+
+import type {
+  Customer,
+  CustomerCreate,
+  CustomerUpdate,
+  EmploymentStatus,
+} from "@/types/api";
 
 interface CustomerFormProps {
+  customer?: Customer;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -18,27 +29,37 @@ interface CustomerFormState {
   employment_status: EmploymentStatus;
 }
 
-const initialFormData: CustomerFormState = {
-  full_name: "",
-  email: "",
-  date_of_birth: "",
-  monthly_income: "",
-  monthly_debt_payments: "",
-  employment_months: "",
-  employment_status: "employed",
-};
-
 const inputClassName =
   "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-primary";
 
+function getInitialFormData(customer?: Customer): CustomerFormState {
+  return {
+    full_name: customer?.full_name ?? "",
+    email: customer?.email ?? "",
+    date_of_birth: customer?.date_of_birth ?? "",
+    monthly_income: customer?.monthly_income ?? "",
+    monthly_debt_payments: customer?.monthly_debt_payments ?? "",
+    employment_months:
+      customer?.employment_months?.toString() ?? "",
+    employment_status: customer?.employment_status ?? "employed",
+  };
+}
+
 export function CustomerForm({
+  customer,
   onSuccess,
   onCancel,
 }: CustomerFormProps) {
-  const createCustomer = useCreateCustomer();
+  const isEditMode = Boolean(customer);
 
-  const [formData, setFormData] =
-    useState<CustomerFormState>(initialFormData);
+  const createCustomer = useCreateCustomer();
+  const updateCustomer = useUpdateCustomer();
+
+  const mutation = isEditMode ? updateCustomer : createCustomer;
+
+  const [formData, setFormData] = useState<CustomerFormState>(
+    () => getInitialFormData(customer),
+  );
 
   function updateField<K extends keyof CustomerFormState>(
     field: K,
@@ -53,19 +74,44 @@ export function CustomerForm({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const payload: CustomerCreate = {
-      full_name: formData.full_name.trim(),
-      email: formData.email.trim() || null,
-      date_of_birth: formData.date_of_birth || null,
+    const financialData = {
       monthly_income: Number(formData.monthly_income),
       monthly_debt_payments: Number(formData.monthly_debt_payments),
       employment_months: Number(formData.employment_months),
       employment_status: formData.employment_status,
     };
 
+    if (isEditMode && customer) {
+      const payload: CustomerUpdate = {
+        full_name: formData.full_name.trim(),
+        email: formData.email.trim() || null,
+        date_of_birth: formData.date_of_birth || null,
+        ...financialData,
+      };
+
+      updateCustomer.mutate(
+        {
+          id: customer.id,
+          data: payload,
+        },
+        {
+          onSuccess: () => onSuccess?.(),
+        },
+      );
+
+      return;
+    }
+
+    const payload: CustomerCreate = {
+      full_name: formData.full_name.trim(),
+      email: formData.email.trim() || null,
+      date_of_birth: formData.date_of_birth || null,
+      ...financialData,
+    };
+
     createCustomer.mutate(payload, {
       onSuccess: () => {
-        setFormData(initialFormData);
+        setFormData(getInitialFormData());
         onSuccess?.();
       },
     });
@@ -227,9 +273,10 @@ export function CustomerForm({
         </div>
       </div>
 
-      {createCustomer.isError && (
+      {mutation.isError && (
         <p className="text-sm text-destructive">
-          Failed to create customer: {createCustomer.error.message}
+          {isEditMode ? "Failed to update customer: " : "Failed to create customer: "}
+          {mutation.error.message}
         </p>
       )}
 
@@ -246,10 +293,16 @@ export function CustomerForm({
 
         <button
           type="submit"
-          disabled={createCustomer.isPending}
+          disabled={mutation.isPending}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {createCustomer.isPending ? "Creating..." : "Create Customer"}
+          {mutation.isPending
+            ? isEditMode
+              ? "Saving..."
+              : "Creating..."
+            : isEditMode
+              ? "Save Changes"
+              : "Create Customer"}
         </button>
       </div>
     </form>

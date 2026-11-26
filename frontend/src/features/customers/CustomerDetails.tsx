@@ -14,6 +14,7 @@ import {
 import { useCustomer } from "./hooks/useCustomers";
 import { useCustomerApplications } from "@/features/applications/hooks/useApplications";
 import { ApplicationForm } from "@/features/applications/components/ApplicationForm";
+import { CustomerForm } from "./components/CustomerForm";
 
 const employmentLabels: Record<string, string> = {
   employed: "Employed",
@@ -54,6 +55,7 @@ export function CustomerDetails() {
   });
 
   const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   if (isLoading) {
     return (
@@ -102,7 +104,28 @@ export function CustomerDetails() {
           </p>
         </div>
       </div>
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowEditForm((current) => !current)}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+        >
+          {showEditForm ? "Close Edit" : "Edit Profile"}
+        </button>
+      </div>
 
+      {showEditForm && (
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-6 text-base font-semibold text-foreground">
+            Edit Customer Profile
+          </h2>
+
+          <CustomerForm
+            customer={customer}
+            onSuccess={() => setShowEditForm(false)}
+            onCancel={() => setShowEditForm(false)}
+          />
+        </section>
+      )}
       <section className="rounded-xl border border-border bg-card p-6">
         <h2 className="mb-6 text-base font-semibold text-foreground">
           Personal Information
