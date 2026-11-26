@@ -101,3 +101,30 @@ export interface PaginatedParams {
   offset?: number;
   limit?: number;
 }
+
+export interface RequestedAmountByCurrency {
+  currency_code: string;
+  total_amount: string;
+}
+
+export interface RecentApplication {
+  id: string;
+  customer_name: string;
+  requested_amount: string;
+  currency_code: string;
+  purpose: string;
+  status: ApplicationStatus;
+  created_at: string;
+}
+
+export interface DashboardStats {
+  total_customers: number;
+  total_applications: number;
+  pending_applications: number;
+  assessed_applications: number;
+  approved_applications: number;
+  rejected_applications: number;
+  withdrawn_applications: number;
+  requested_amount_by_currency: RequestedAmountByCurrency[];
+  recent_applications: RecentApplication[];
+}
