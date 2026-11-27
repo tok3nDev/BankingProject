@@ -44,3 +44,6 @@ backend/ml/data/processed/
 # Generated ML model artifacts
 backend/ml/models/*.joblib
 backend/ml/models/*.pkl
+
+# Track the selected experimental ML model
+!backend/ml/models/random_forest.joblib
