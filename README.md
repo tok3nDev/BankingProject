@@ -13,6 +13,7 @@ A modular banking application built with Python, FastAPI, and React. The project
 - REST API with interactive Swagger documentation
 - Experimental machine learning pipeline for credit risk research
 - Local model training, evaluation, and inference
+- Standalone ML inference API and Credit Risk Lab interface
 
 ## Tech Stack
 
@@ -168,6 +169,18 @@ Frontend documentation: [frontend/README.md](frontend/README.md)
 
 The database health endpoint requires a running PostgreSQL instance and a valid `DATABASE_URL`.
 
+### Experimental ML API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/v1/ml/health` | Reports ML metadata and model artifact availability |
+| GET | `/api/v1/ml/model-info` | Returns model metadata, threshold, and evaluation metrics |
+| POST | `/api/v1/ml/predict` | Runs a manual prediction using the eight expected dataset features |
+
+The prediction endpoint accepts the original dataset feature names, including hyphenated delinquency fields. `MonthlyIncome` is optional. Invalid input is rejected with HTTP 422. Unavailable model artifacts or metadata produce HTTP 503 responses.
+
+The API is experimental and independent of the application assessment workflow. It does not persist predictions or make credit decisions. The health endpoint checks artifact-file availability; it does not load the model to verify inference readiness.
+
 ## Testing and Quality Checks
 
 ### Backend
@@ -321,7 +334,9 @@ Generated artifacts are stored under `backend/ml/models/`.
 
 Raw datasets and generated model binaries are excluded from Git. Evaluation metadata is tracked in the repository.
 
-The inference module requires the locally generated model artifact and metadata. It is not a deployed prediction service.
+The local inference module is also exposed through a separate experimental REST API under `/api/v1/ml/`. The API provides manual predictions and model metadata without connecting predictions to customers, applications, assessments, or credit decisions.
+
+The API requires the locally generated model artifact for inference. The metadata endpoint can work independently of the model binary. A production deployment does not automatically include the model artifact because generated model binaries are excluded from Git.
 
 ### Feature Compatibility Limitations
 
@@ -340,9 +355,9 @@ Dataset `DebtRatio` is not equivalent to the application's debt-to-income ratio.
 
 Missing credit-history features must not be replaced with arbitrary defaults or values derived from unrelated application fields.
 
-The experimental model is not integrated into the REST API, database, or `AssessmentService`.
+The experimental model is exposed through a standalone REST API, but it is not integrated into the customer or application workflow, database persistence, or `AssessmentService`.
 
-Integration would require suitable feature data, domain validation, and additional model evaluation.
+The API accepts manually supplied dataset features. It does not derive missing credit-history features from customer records or application data.
 
 ## Development Status
 
@@ -356,6 +371,6 @@ The core MVP workflow is implemented:
 
 An independent experimental machine learning pipeline is also available for research and model evaluation. It does not affect application scoring or credit decisions.
 
-Dedicated standalone Credit Scoring, Decisions, AI Assistant, and Settings pages are currently placeholders. Assessment and decision functionality is available through application details.
+The standalone Credit Scoring page provides access to the experimental ML API through a manual prediction form and displays model metadata and evaluation metrics. It does not replace the existing application assessment workflow. AI Assistant and Settings remain placeholders. Assessment and decision functionality is available through application details.
 
 The project is intended for educational and demonstration purposes, not production banking operations. No model in this project should be used to make real lending decisions.

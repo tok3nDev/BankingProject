@@ -111,14 +111,14 @@ export function Sidebar() {
       {/* AI Engine status */}
       <div className="mb-4 rounded-xl border border-border bg-background p-3">
         <div className="mb-2 flex items-center gap-2">
-          <span className="size-2 rounded-full bg-yellow-500" />
+          <span className="size-2 rounded-full bg-amber-500" />
           <span className="text-xs font-medium text-text-primary">
             AI Engine
           </span>
         </div>
 
         <p className="text-[11px] text-text-secondary">
-          Integration pending
+          Experimental ML
         </p>
       </div>
 

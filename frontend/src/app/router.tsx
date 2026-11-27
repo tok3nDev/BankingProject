@@ -7,6 +7,7 @@ import { CustomerDetails } from "@/features/customers/CustomerDetails";
 import { CustomersPage } from "@/features/customers/CustomersPage";
 import { ApplicationsPage } from "@/features/applications/ApplicationsPage";
 import { ApplicationDetails } from "@/features/applications/ApplicationDetails";
+import { CreditScoringPage } from "@/features/credit-scoring/CreditScoringPage";
 
 export const router = createBrowserRouter([
   {
@@ -35,7 +36,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "credit-scoring",
-        element: <PlaceholderPage title="Credit Scoring" />,
+        element: <CreditScoringPage />,
       },
       {
         path: "decisions",

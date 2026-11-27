@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     test_database_url: str | None = None
-
+    ml_model_dir: Path | None = None
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     ollama_base_url: str = "http://localhost:11434"

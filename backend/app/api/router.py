@@ -6,6 +6,7 @@ from app.modules.credit_scoring.api.assessments import router as assessments_rou
 from app.modules.credit_scoring.api.customers import router as customers_router
 from app.modules.credit_scoring.api.decisions import router as decisions_router
 from app.modules.dashboard.api.dashboard import router as dashboard_router
+from app.modules.ml.api.predictions import router as ml_router
 
 api_router = APIRouter()
 
@@ -15,3 +16,4 @@ api_router.include_router(applications_router)
 api_router.include_router(assessments_router)
 api_router.include_router(decisions_router)
 api_router.include_router(dashboard_router)
+api_router.include_router(ml_router)

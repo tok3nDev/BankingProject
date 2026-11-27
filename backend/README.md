@@ -170,8 +170,37 @@ The API will be available at:
 | Assessments | Credit risk assessment records and rule-based scoring |
 | Decisions | Credit decision management and decision history |
 | Dashboard | Aggregated application and customer statistics |
+| ML | Experimental standalone inference API and model metadata |
 
 API endpoints are grouped under `/api/v1`.
+
+## Experimental ML API
+
+The ML API is registered under `/api/v1/ml/` and is separate from the existing credit assessment endpoints.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/v1/ml/health` | Reports metadata and model artifact availability |
+| GET | `/api/v1/ml/model-info` | Returns model metadata, selected threshold, and evaluation metrics |
+| POST | `/api/v1/ml/predict` | Runs manual inference using the expected dataset features |
+
+The prediction request requires the eight features used by the training pipeline. `MonthlyIncome` is optional. Field names follow the source dataset, including hyphens in delinquency feature names.
+
+Responses:
+- `200` — successful health, metadata, or prediction response.
+- `422` — invalid prediction input.
+- `503` — required metadata or model artifact is unavailable.
+
+The model is loaded lazily when prediction is requested. The health endpoint checks whether the expected artifact file exists; it does not load the model or guarantee successful inference.
+
+The API does not persist predictions or trigger application assessments or credit decisions.
+
+### Model Artifact Deployment
+
+The selected model binary (`ml/models/random_forest.joblib`) is generated locally and excluded from Git. To enable predictions in another environment, the artifact must be provisioned separately.
+
+The optional `ML_MODEL_DIR` environment variable configures the directory containing both the model artifact and `comparison_metrics.json`. Without the model binary, the API can still serve metadata when the metadata file is present, but prediction requests return HTTP 503.
+
 
 ## Credit Assessment
 
@@ -289,7 +318,9 @@ Generated model artifacts are saved under `ml/models/`.
 
 Raw datasets and generated model binaries are excluded from Git. Evaluation metadata is tracked in the repository.
 
-The inference module requires the locally generated model artifact and metadata. It is not a deployed prediction service.
+The local inference module is exposed through a separate experimental REST API under `/api/v1/ml/`. The API supports manual predictions and model metadata retrieval, but it is not connected to customer records, credit applications, assessment persistence, or `AssessmentService`.
+
+The model artifact is required for predictions. Metadata can be served independently. Generated model binaries are excluded from Git, so deploying the backend code does not automatically provision the model artifact.
 
 ### Feature Compatibility Limitations
 
@@ -306,9 +337,9 @@ The following dataset features are not currently available in the application:
 
 Dataset `DebtRatio` is not equivalent to the application's debt-to-income ratio. These features must not be substituted with unrelated application fields or arbitrary default values.
 
-The experimental model is not integrated into the REST API, database, or `AssessmentService`.
+The experimental model is exposed through a standalone REST API, but it is not integrated into the customer or application workflow, database persistence, or `AssessmentService`.
 
-Connecting this model to the application would require suitable feature data, domain validation, and additional model evaluation.
+The API accepts manually supplied dataset features. It does not derive missing credit-history features from customer records or application data.
 
 ## Decisions
 

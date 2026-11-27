@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,9 @@ class CreditRiskPredictor:
 
         self.metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
 
+        if not isinstance(self.metadata, dict):
+            raise ValueError("Model metadata must be a JSON object")
+
         required_metadata = {
             "model_name",
             "model_version",
@@ -44,6 +48,17 @@ class CreditRiskPredictor:
 
         if missing_metadata:
             raise ValueError(f"Missing metadata fields: {sorted(missing_metadata)}")
+
+        model_name = self.metadata["model_name"]
+        model_version = self.metadata["model_version"]
+
+        if not isinstance(model_name, str) or not re.fullmatch(
+            r"[a-zA-Z0-9_-]+", model_name
+        ):
+            raise ValueError("Invalid model name")
+
+        if not isinstance(model_version, str) or not model_version.strip():
+            raise ValueError("Invalid model version")
 
         self.features = self.metadata["features"]
 
@@ -66,7 +81,6 @@ class CreditRiskPredictor:
         if self.metadata["probability_calibrated"] is not False:
             raise ValueError("This predictor expects an explicitly uncalibrated model")
 
-        model_name = self.metadata["model_name"]
         model_path = self.model_dir / f"{model_name}.joblib"
 
         if not model_path.is_file():
