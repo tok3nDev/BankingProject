@@ -37,3 +37,10 @@ backend/data/synthetic/
 # OS
 .DS_Store
 Thumbs.db
+# Machine Learning datasets
+backend/ml/data/raw/
+backend/ml/data/processed/
+
+# Generated ML model artifacts
+backend/ml/models/*.joblib
+backend/ml/models/*.pkl
